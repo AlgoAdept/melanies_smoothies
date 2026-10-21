@@ -1,8 +1,9 @@
-
+```python
 # Import Python packages
 import streamlit as st
-from snowflake.snowpark.context import get_active_session
+from snowflake.snowpark import Session
 from snowflake.snowpark.functions import col
+from cryptography.hazmat.primitives import serialization
 
 # App title
 st.title(":cup_with_straw: Customize Your Smoothie! :cup_with_straw:")
@@ -14,9 +15,26 @@ st.write("Choose the fruits you want in your custom Smoothie!")
 name_on_order = st.text_input("Name on Smoothie:")
 st.write("The name on your Smoothie will be:", name_on_order)
 
-# Get the active Snowflake session
-cnx = st.connection("snowflake")
-session = cnx.session()
+# Load Snowflake connection settings
+config = dict(st.secrets["connections"]["snowflake"])
+
+# Convert PEM private key to DER bytes
+private_key_pem = config.pop("private_key")
+
+private_key_obj = serialization.load_pem_private_key(
+    private_key_pem.encode("utf-8"),
+    password=None,
+)
+
+config["private_key"] = private_key_obj.private_bytes(
+    encoding=serialization.Encoding.DER,
+    format=serialization.PrivateFormat.PKCS8,
+    encryption_algorithm=serialization.NoEncryption(),
+)
+
+# Create Snowpark session
+session = Session.builder.configs(config).create()
+
 # Load fruit options
 my_dataframe = session.table("smoothies.public.fruit_options")
 
@@ -58,3 +76,4 @@ if ingredients_list:
 
         except Exception as e:
             st.error(f"Unable to place your order: {e}")
+```
