@@ -1,4 +1,4 @@
-```python
+
 # Import Python packages
 import streamlit as st
 from snowflake.snowpark import Session
@@ -76,4 +76,3 @@ if ingredients_list:
 
         except Exception as e:
             st.error(f"Unable to place your order: {e}")
-```
